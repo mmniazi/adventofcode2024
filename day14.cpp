@@ -1,6 +1,6 @@
 #include <iostream>
 #include <ranges>
-
+#include <fstream>
 #include "utils.h"
 
 namespace rg = std::ranges;
@@ -16,26 +16,31 @@ struct robot {
     int dy;
 };
 
-void debug(const std::vector<robot> &robots) {
-    // Create a 2D grid for counting robots at each position
-    std::vector grid(height, std::vector(width, 0));
+auto to_grid(const std::vector<robot> &robots) {
+    auto grid = std::vector(height, std::vector(width, 0));
 
     // Count robots at each position
     for (const auto &robot: robots) {
         grid[robot.y][robot.x]++;
     }
 
-    // Print the grid
-    for (const auto &row: grid) {
+    return grid;
+}
+
+void debug(const std::vector<robot> &robots) {
+    // print the grid
+    for (const auto &row: to_grid(robots)) {
         for (const auto &cell: row) {
             if (cell == 0) {
                 std::cout << '.';
             } else {
-                std::cout << cell;
+                std::cout << '*';
             }
         }
-        std::cout << '\n';
+        std::cout << std::endl;
     }
+
+    std::cout << std::endl << std::endl << std::endl;
 }
 
 inline auto tick(std::vector<robot>& robots) {
@@ -49,6 +54,60 @@ inline auto tick(std::vector<robot>& robots) {
         y = y % height;
         if (y < 0) y = height + y;
         y = y % height;
+    }
+}
+
+bool has_horizontal_line(const std::vector<robot>& robots) {
+    const auto grid = to_grid(robots);
+    for (const auto robot: robots) {
+        int neg_offset = -1;
+        while (robot.x + neg_offset > 0 && grid[robot.y][robot.x + neg_offset] > 0) {
+            neg_offset--;
+        }
+        int pos_offset = 1;
+        while (robot.x + pos_offset < width && grid[robot.y][robot.x + pos_offset] > 0) {
+            pos_offset++;
+        }
+
+        if (pos_offset - neg_offset - 1 >= 8) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void part1(const std::vector<robot> &robots) {
+    auto robots_mut = robots;
+    for (auto i = 0; i < 100; i++) {
+        tick(robots_mut);
+    }
+
+    constexpr int horizontal_mid = width / 2;
+    constexpr int vertical_mid = height / 2;
+    int q1 = 0, q2 = 0, q3 = 0, q4 = 0;
+    for (const auto &robot: robots_mut) {
+        if (robot.x < horizontal_mid && robot.y < vertical_mid) {
+            q1++;
+        } else if (robot.x > horizontal_mid && robot.y < vertical_mid) {
+            q2++;
+        } else if (robot.x < horizontal_mid && robot.y > vertical_mid) {
+            q3++;
+        } else if (robot.x > horizontal_mid && robot.y > vertical_mid) {
+            q4++;
+        }
+    }
+
+    std::cout << "part 1: " << q1 * q2 * q3 * q4 << std::endl;
+}
+
+void part2(const std::vector<robot> &robots) {
+    auto robots_mut = robots;
+    for (auto i = 0; i < height * width; i++) {
+        if (has_horizontal_line(robots_mut)) {
+            debug(robots_mut);
+            std::cout << "iteration: " << i << std::endl;
+        }
+        tick(robots_mut);
     }
 }
 
@@ -70,27 +129,6 @@ int main() {
     const auto robots = lines
                   | vw::transform(parse)
                   | rg::to<std::vector>();
-    auto robots_part_1 = robots;
-    for (auto i = 0; i < 100; i++) {
-        tick(robots_part_1);
-    }
-
-    constexpr int horizontal_mid = width / 2;
-    constexpr int vertical_mid = height / 2;
-    int q1 = 0, q2 = 0, q3 = 0, q4 = 0;
-    for (const auto &robot: robots_part_1) {
-        if (robot.x < horizontal_mid && robot.y < vertical_mid) {
-            q1++;
-        } else if (robot.x > horizontal_mid && robot.y < vertical_mid) {
-            q2++;
-        } else if (robot.x < horizontal_mid && robot.y > vertical_mid) {
-            q3++;
-        } else if (robot.x > horizontal_mid && robot.y > vertical_mid) {
-            q4++;
-        }
-    }
-
-    std::cout << "part 1: " << q1 * q2 * q3 * q4 << std::endl;
-
-
+    part1(robots);
+    part2(robots);
 }
