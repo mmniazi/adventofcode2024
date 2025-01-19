@@ -3,41 +3,26 @@
 #include <unordered_map>
 #include <ranges>
 #include <vector>
-
-using std::views::transform;
-using std::vector;
-using std::stoi;
-using std::ranges::sort;
-using std::abs;
-using std::unordered_map;
-using std::cout;
-using std::endl;
-using std::ranges::to;
-using std::views::zip;
-
 #include "utils.h"
 
 int main() {
-    const auto data = read_file_split_by_spaces("1_1.txt");
-    auto left = data | transform([](const auto& v) { return stoi(v[0]); }) | to<vector>();
-    auto right = data | transform([](const auto& v) { return stoi(v[1]); }) | to<vector>();
-    const auto size = left.size();
+    const auto data = read_file_split_by_spaces("1_1.txt", to_int);
+    auto left = data | std::views::transform(nth(0)) | std::ranges::to<std::vector>();
+    auto right = data | std::views::transform(nth(1)) | std::ranges::to<std::vector>();
 
-    sort(left);
-    sort(right);
+    std::ranges::sort(left);
+    std::ranges::sort(right);
 
-    unordered_map<int, int> right_map(size);
-    for (auto elem: right) {
+    std::unordered_map<int, int> right_map;
+    for (const auto& elem : right) {
         ++right_map[elem];
     }
 
-    auto distance_sum = 0UL;
-    auto similarity_sum = 0UL;
-    for (const auto& [l, r] : zip(left, right)) {
-        distance_sum += abs(l - r);
+    auto distance_sum = 0UL, similarity_sum = 0UL;
+    for (const auto& [l, r] : std::views::zip(left, right)) {
+        distance_sum += std::abs(l - r);
         similarity_sum += l * right_map[l];
     }
 
-    cout << "distance: " << distance_sum << endl;
-    cout << "similarity: " << similarity_sum << endl;
+    std::cout << "distance: " << distance_sum << '\n' << "similarity: " << similarity_sum << '\n';
 }
